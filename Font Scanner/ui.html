@@ -54,6 +54,13 @@
         color: #ffffff;
       }
 
+      .btn-primary:disabled {
+        background: #9ca3af;
+        color: #ffffff;
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+
       .btn-secondary {
         background: #e5e7eb;
         color: #111827;
@@ -148,6 +155,11 @@
     <h1>Font Scanner</h1>
     <p>Selecciona una página del archivo para ver todas las características tipográficas utilizadas.</p>
 
+    <div id="frameSelectionInfo" style="padding: 8px; margin-bottom: 8px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; font-size: 11px;">
+      <strong>Frame seleccionado:</strong> <span id="selectedFrameName">Ninguno</span>
+      <button class="btn-primary" id="scanFrameButton" style="margin-top: 4px; width: 100%;" disabled>Escanear frame seleccionado</button>
+    </div>
+
     <div>
       <label for="pageSelect">Página a escanear</label>
       <select id="pageSelect">
@@ -161,6 +173,7 @@
     </div>
 
     <div id="actionToolbar" class="toolbar" style="display: none; margin-top: 8px;">
+      <button class="btn-primary" id="exportTableButton">Exportar tabla</button>
       <button class="btn-primary" id="selectStylesButton">Seleccionar estilos en Figma</button>
     </div>
 
@@ -174,13 +187,30 @@
     <script>
       const pageSelect = document.getElementById('pageSelect');
       const scanButton = document.getElementById('scanButton');
+      const scanFrameButton = document.getElementById('scanFrameButton');
       const closeButton = document.getElementById('closeButton');
       const resultSummary = document.getElementById('resultSummary');
       const tableContainer = document.getElementById('tableContainer');
       const actionToolbar = document.getElementById('actionToolbar');
+      const exportTableButton = document.getElementById('exportTableButton');
       const selectStylesButton = document.getElementById('selectStylesButton');
+      const frameSelectionInfo = document.getElementById('frameSelectionInfo');
+      const selectedFrameName = document.getElementById('selectedFrameName');
 
       let currentStyles = [];
+      let currentSelectedFrame = null;
+
+      function updateFrameSelection(frame) {
+        if (frame) {
+          currentSelectedFrame = frame;
+          selectedFrameName.textContent = frame.name;
+          scanFrameButton.disabled = false;
+        } else {
+          currentSelectedFrame = null;
+          selectedFrameName.textContent = 'Ninguno';
+          scanFrameButton.disabled = true;
+        }
+      }
 
       function populatePages(pages) {
         pageSelect.innerHTML = '';
@@ -205,18 +235,12 @@
 
       function renderResult(data) {
         tableContainer.innerHTML = '';
-
-        if (data.error) {
-          resultSummary.textContent = data.error;
-          resultSummary.className = 'error';
-          return;
-        }
-
         const styles = data.styles || [];
 
         if (!styles.length) {
+          const scanType = data.scanType || 'página';
           resultSummary.innerHTML =
-            'La página <strong>' +
+            'La ' + scanType + ' <strong>' +
             (data.pageName || '') +
             '</strong> no contiene textos con estilos tipográficos detectables.';
           resultSummary.className = '';
@@ -225,8 +249,9 @@
           return;
         }
 
+        const scanType = data.scanType || 'página';
         resultSummary.innerHTML =
-          'La página <strong>' +
+          'La ' + scanType + ' <strong>' +
           (data.pageName || '') +
           '</strong> tiene <strong>' +
           styles.length +
@@ -258,19 +283,15 @@
         for (var i = 0; i < styles.length; i++) {
           const s = styles[i];
           const color = s.fill || 'n/a';
-          const swatchStyle = color.startsWith('#')
-            ? 'background:' + color + ';'
-            : color !== 'n/a' && color !== '-'
+          const swatchStyle = color.startsWith('#') || (color !== 'n/a' && color !== '-')
             ? 'background:' + color + ';'
             : '';
           
-          let colorText = '';
+          let colorText = s.fill || '-';
           if (s.colorStyleName) {
             colorText = '<strong>' + s.colorStyleName + '</strong> ' + (s.fill || '');
           } else if (s.colorTokenName) {
             colorText = '<strong>' + s.colorTokenName + '</strong> ' + (s.fill || '');
-          } else {
-            colorText = s.fill || '-';
           }
           
           html += '<tr>' +
@@ -297,6 +318,11 @@
 
         if (message.type === 'init') {
           populatePages(message.pages || []);
+          updateFrameSelection(message.selectedFrame);
+        }
+
+        if (message.type === 'selection-changed') {
+          updateFrameSelection(message.selectedFrame);
         }
 
         if (message.type === 'scan-result') {
@@ -318,6 +344,23 @@
         }
       };
 
+      // Escanear el frame seleccionado
+      scanFrameButton.onclick = () => {
+        if (!currentSelectedFrame || scanFrameButton.disabled) {
+          return;
+        }
+
+        resultSummary.textContent = 'Escaneando frame…';
+        resultSummary.className = '';
+        tableContainer.innerHTML = '';
+        actionToolbar.style.display = 'none';
+
+        parent.postMessage(
+          { pluginMessage: { type: 'scan-frame', frameId: currentSelectedFrame.id } },
+          '*'
+        );
+      };
+
       // Escanear la página seleccionada
       scanButton.onclick = () => {
         const pageId = pageSelect.value;
@@ -337,6 +380,53 @@
           { pluginMessage: { type: 'scan-page', pageId } },
           '*'
         );
+      };
+
+      // Exportar tabla
+      exportTableButton.onclick = () => {
+        if (currentStyles.length === 0) {
+          resultSummary.textContent = 'No hay datos para exportar.';
+          resultSummary.className = 'error';
+          return;
+        }
+
+        // Crear CSV
+        let csv = 'Text Style,Familia,Estilo,Tamaño,Interlineado,Color Swatch,Color,Usos\n';
+        
+        for (var i = 0; i < currentStyles.length; i++) {
+          const s = currentStyles[i];
+          const colorText = s.colorStyleName 
+            ? s.colorStyleName + ' ' + (s.fill || '')
+            : s.colorTokenName 
+            ? s.colorTokenName + ' ' + (s.fill || '')
+            : (s.fill || '-');
+          
+          const row = [
+            s.textStyleName || '-',
+            s.fontFamily || '-',
+            s.fontStyle || '-',
+            s.fontSize || '-',
+            s.lineHeight || '-',
+            s.fill || '-',
+            colorText.replace(/"/g, '""'), // Escapar comillas dobles
+            s.count || 0
+          ];
+          
+          csv += '"' + row.join('","') + '"\n';
+        }
+
+        // Crear y descargar CSV
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'font-styles-' + new Date().getTime() + '.csv';
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        resultSummary.textContent = 'Tabla exportada correctamente.';
+        resultSummary.className = '';
       };
 
       // Seleccionar estilos en Figma
