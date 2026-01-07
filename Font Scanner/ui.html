@@ -2,7 +2,7 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>Font Families Counter</title>
+    <title>Font Scanner</title>
     <style>
       body {
         margin: 0;
@@ -80,15 +80,17 @@
       }
 
       .table-container {
-        max-height: 300px;
+        max-height: calc(100vh - 300px);
         overflow: auto;
         margin-top: 8px;
+        width: 100%;
       }
 
       table {
         border-collapse: collapse;
         width: 100%;
         font-size: 11px;
+        table-layout: auto;
       }
 
       th,
@@ -121,6 +123,17 @@
         vertical-align: middle;
       }
 
+      input[type="radio"] {
+        cursor: pointer;
+        width: 16px;
+        height: 16px;
+      }
+
+      .radio-cell {
+        width: 30px;
+        text-align: center;
+      }
+
       .empty {
         color: #9ca3af;
         font-style: italic;
@@ -147,6 +160,10 @@
       <button class="btn-secondary" id="closeButton">Cerrar</button>
     </div>
 
+    <div id="actionToolbar" class="toolbar" style="display: none; margin-top: 8px;">
+      <button class="btn-primary" id="selectStylesButton">Seleccionar estilos en Figma</button>
+    </div>
+
     <div id="result" class="result">
       <div id="resultSummary" class="empty">
         Aún no se ha escaneado ninguna página.
@@ -160,6 +177,10 @@
       const closeButton = document.getElementById('closeButton');
       const resultSummary = document.getElementById('resultSummary');
       const tableContainer = document.getElementById('tableContainer');
+      const actionToolbar = document.getElementById('actionToolbar');
+      const selectStylesButton = document.getElementById('selectStylesButton');
+
+      let currentStyles = [];
 
       function populatePages(pages) {
         pageSelect.innerHTML = '';
@@ -200,6 +221,7 @@
             '</strong> no contiene textos con estilos tipográficos detectables.';
           resultSummary.className = '';
           tableContainer.innerHTML = '<div class="empty">Sin estilos tipográficos</div>';
+          actionToolbar.style.display = 'none';
           return;
         }
 
@@ -222,30 +244,44 @@
         resultSummary.className = '';
 
         let html = '<table><thead><tr>' +
+          '<th class="radio-cell">Seleccionar</th>' +
+          '<th>Text Style</th>' +
           '<th>Familia</th>' +
           '<th>Estilo</th>' +
           '<th>Tamaño</th>' +
           '<th>Interlineado</th>' +
-          '<th>Tracking</th>' +
+          '<th class="radio-cell">Color Swatch</th>' +
           '<th>Color</th>' +
           '<th>Usos</th>' +
           '</tr></thead><tbody>';
 
-        for (const s of styles) {
+        for (var i = 0; i < styles.length; i++) {
+          const s = styles[i];
           const color = s.fill || 'n/a';
-          const swatchStyle = color.startsWith('rgb')
+          const swatchStyle = color.startsWith('#')
+            ? 'background:' + color + ';'
+            : color !== 'n/a' && color !== '-'
             ? 'background:' + color + ';'
             : '';
-
+          
+          let colorText = '';
+          if (s.colorStyleName) {
+            colorText = '<strong>' + s.colorStyleName + '</strong> ' + (s.fill || '');
+          } else if (s.colorTokenName) {
+            colorText = '<strong>' + s.colorTokenName + '</strong> ' + (s.fill || '');
+          } else {
+            colorText = s.fill || '-';
+          }
+          
           html += '<tr>' +
+            '<td class="radio-cell"><input type="radio" name="styleSelection" class="style-radio" data-index="' + i + '" value="' + i + '"></td>' +
+            '<td>' + (s.textStyleName || '-') + '</td>' +
             '<td>' + (s.fontFamily || '-') + '</td>' +
             '<td>' + (s.fontStyle || '-') + '</td>' +
             '<td>' + (s.fontSize || '-') + '</td>' +
             '<td>' + (s.lineHeight || '-') + '</td>' +
-            '<td>' + (s.letterSpacing || '-') + '</td>' +
-            '<td><span class="color-swatch" style="' + swatchStyle + '"></span>' +
-            color +
-            '</td>' +
+            '<td class="radio-cell"><span class="color-swatch" style="' + swatchStyle + '"></span></td>' +
+            '<td>' + colorText + '</td>' +
             '<td>' + (s.count || 0) + '</td>' +
             '</tr>';
         }
@@ -264,7 +300,21 @@
         }
 
         if (message.type === 'scan-result') {
+          currentStyles = message.styles || [];
           renderResult(message);
+          if (currentStyles.length > 0) {
+            actionToolbar.style.display = 'flex';
+          }
+        }
+
+        if (message.type === 'selection-complete') {
+          resultSummary.textContent = message.message;
+          resultSummary.className = '';
+        }
+
+        if (message.type === 'error') {
+          resultSummary.textContent = message.message;
+          resultSummary.className = 'error';
         }
       };
 
@@ -281,9 +331,34 @@
         resultSummary.textContent = 'Escaneando página…';
         resultSummary.className = '';
         tableContainer.innerHTML = '';
+        actionToolbar.style.display = 'none';
 
         parent.postMessage(
           { pluginMessage: { type: 'scan-page', pageId } },
+          '*'
+        );
+      };
+
+      // Seleccionar estilos en Figma
+      selectStylesButton.onclick = () => {
+        const selectedRadio = tableContainer.querySelector('.style-radio:checked');
+        if (!selectedRadio) {
+          resultSummary.textContent = 'Por favor, selecciona un estilo.';
+          resultSummary.className = 'error';
+          return;
+        }
+
+        const index = parseInt(selectedRadio.getAttribute('data-index'), 10);
+        const selectedStyles = [];
+        if (currentStyles[index]) {
+          selectedStyles.push(currentStyles[index]);
+        }
+
+        resultSummary.textContent = 'Seleccionando nodos…';
+        resultSummary.className = '';
+
+        parent.postMessage(
+          { pluginMessage: { type: 'select-styles', selectedStyles: selectedStyles } },
           '*'
         );
       };
@@ -295,6 +370,7 @@
           '*'
         );
       };
+
     </script>
   </body>
 </html>
