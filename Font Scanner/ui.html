@@ -1,8 +1,8 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>Font Scanner</title>
+    <title>Font Families Counter</title>
     <style>
       body {
         margin: 0;
@@ -10,6 +10,7 @@
         font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         background: #ffffff;
         color: #111827;
+        font-size: 12px;
       }
 
       h1 {
@@ -19,22 +20,29 @@
 
       p {
         margin: 0 0 12px;
-        font-size: 12px;
         color: #6b7280;
       }
 
-      .toolbar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 12px;
+      label {
+        display: block;
+        margin-bottom: 4px;
+        font-weight: 500;
+      }
+
+      select {
+        width: 100%;
+        padding: 6px 8px;
+        border-radius: 6px;
+        border: 1px solid #d1d5db;
+        font-size: 12px;
+        margin-bottom: 8px;
       }
 
       button {
         border-radius: 6px;
         border: none;
         padding: 6px 10px;
-        font-size: 11px;
+        font-size: 12px;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
@@ -51,154 +59,176 @@
         color: #111827;
       }
 
-      table {
-        border-collapse: collapse;
-        width: 100%;
-        font-size: 11px;
+      .toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 8px;
+        margin-bottom: 12px;
       }
 
-      th,
-      td {
-        border-bottom: 1px solid #e5e7eb;
-        padding: 6px 8px;
-        text-align: left;
-        vertical-align: middle;
-      }
-
-      th {
+      .result {
+        padding: 8px;
+        border-radius: 6px;
         background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        margin-bottom: 8px;
+      }
+
+      .result strong {
         font-weight: 600;
       }
 
-      tbody tr:nth-child(even) {
-        background: #f9fafb;
+      ul {
+        margin: 4px 0 0;
+        padding-left: 18px;
+        max-height: 140px;
+        overflow: auto;
       }
 
-      .sample-text {
-        font-size: 12px;
+      .empty {
+        color: #9ca3af;
+        font-style: italic;
       }
 
-      .badge {
-        padding: 2px 6px;
-        border-radius: 999px;
-        background: #e5e7eb;
-        font-size: 10px;
-      }
-
-      .empty-state {
-        font-size: 12px;
-        color: #6b7280;
-        text-align: center;
-        padding: 24px 8px 8px;
-      }
-
-      .color-swatch {
-        width: 14px;
-        height: 14px;
-        border-radius: 4px;
-        border: 1px solid #d1d5db;
-        margin-right: 6px;
-        display: inline-block;
-        vertical-align: middle;
+      .error {
+        color: #b91c1c;
       }
     </style>
   </head>
   <body>
-    <h1>Font Scanner</h1>
-    <p>Escanea la página actual y muestra todos los estilos tipográficos utilizados.</p>
+    <h1>Font Families Counter</h1>
+    <p>Selecciona una página del archivo para ver cuántas tipografías diferentes utiliza.</p>
 
-    <div class="toolbar">
-      <span id="summary" class="badge">0 estilos</span>
-      <div>
-        <button class="btn-secondary" id="refresh">Reescanear</button>
-        <button class="btn-primary" id="close">Cerrar</button>
-      </div>
+    <div>
+      <label for="pageSelect">Página a escanear</label>
+      <select id="pageSelect">
+        <option value="" disabled selected>Cargando páginas…</option>
+      </select>
     </div>
 
-    <div id="content">
-      <div class="empty-state">
-        Escaneando tipografías…
+    <div class="toolbar">
+      <button class="btn-primary" id="scanButton">Escanear página</button>
+      <button class="btn-secondary" id="closeButton">Cerrar</button>
+    </div>
+
+    <div id="result" class="result">
+      <div id="resultSummary" class="empty">
+        Aún no se ha escaneado ninguna página.
       </div>
+      <ul id="fontsList"></ul>
     </div>
 
     <script>
-      const summaryEl = document.getElementById('summary');
-      const contentEl = document.getElementById('content');
+      const pageSelect = document.getElementById('pageSelect');
+      const scanButton = document.getElementById('scanButton');
+      const closeButton = document.getElementById('closeButton');
+      const resultSummary = document.getElementById('resultSummary');
+      const fontsList = document.getElementById('fontsList');
 
-      function renderTable(styles) {
-        if (!styles || styles.length === 0) {
-          summaryEl.textContent = '0 estilos';
-          contentEl.innerHTML =
-            '<div class="empty-state">No se han encontrado textos en la página actual.</div>';
+      function populatePages(pages) {
+        pageSelect.innerHTML = '';
+
+        if (!pages || pages.length === 0) {
+          const option = document.createElement('option');
+          option.value = '';
+          option.disabled = true;
+          option.selected = true;
+          option.textContent = 'No se han encontrado páginas';
+          pageSelect.appendChild(option);
           return;
         }
 
-        summaryEl.textContent =
-          styles.length === 1 ? '1 estilo' : styles.length + ' estilos';
+        for (const page of pages) {
+          const option = document.createElement('option');
+          option.value = page.id;
+          option.textContent = page.name;
+          pageSelect.appendChild(option);
+        }
+      }
 
-        let html = '<table><thead><tr>' +
-          '<th>Fuente</th>' +
-          '<th>Tamaño</th>' +
-          '<th>Interlineado</th>' +
-          '<th>Tracking</th>' +
-          '<th>Mayúsculas / Deco</th>' +
-          '<th>Color</th>' +
-          '<th>Usos</th>' +
-          '<th>Muestra</th>' +
-          '</tr></thead><tbody>';
+      function renderResult(data) {
+        fontsList.innerHTML = '';
 
-        for (const style of styles) {
-          const color = style.fill || 'n/a';
-          const swatchStyle = color.startsWith('rgb')
-            ? 'background:' + color + ';'
-            : '';
-
-          html += '<tr>' +
-            '<td>' + (style.fontFamily || '-') + ' <span class="badge">' +
-            (style.fontStyle || '-') + '</span></td>' +
-            '<td>' + (style.fontSize || '-') + '</td>' +
-            '<td>' + (style.lineHeight || '-') + '</td>' +
-            '<td>' + (style.letterSpacing || '-') + '</td>' +
-            '<td>' +
-            (style.textCase || '-') +
-            ' / ' +
-            (style.textDecoration || '-') +
-            '</td>' +
-            '<td><span class="color-swatch" style="' + swatchStyle + '"></span>' +
-            color +
-            '</td>' +
-            '<td>' + (style.count || 0) + '</td>' +
-            '<td><span class="sample-text" ' +
-            'style="' +
-            (color.startsWith('rgb') ? 'color:' + color + ';' : '') +
-            '">' +
-            'AaBbCc' +
-            '</span></td>' +
-            '</tr>';
+        if (data.error) {
+          resultSummary.textContent = data.error;
+          resultSummary.className = 'error';
+          return;
         }
 
-        html += '</tbody></table>';
-        contentEl.innerHTML = html;
+        if (!data.fontsCount || data.fontsCount === 0) {
+          resultSummary.innerHTML =
+            'La página <strong>' +
+            (data.pageName || '') +
+            '</strong> no contiene textos con fuentes detectables.';
+          resultSummary.className = '';
+          fontsList.innerHTML = '<li class="empty">Sin tipografías</li>';
+          return;
+        }
+
+        resultSummary.innerHTML =
+          'La página <strong>' +
+          (data.pageName || '') +
+          '</strong> utiliza <strong>' +
+          data.fontsCount +
+          '</strong> tipograf' +
+          (data.fontsCount === 1 ? 'ía' : 'ías') +
+          ' diferente' +
+          (data.fontsCount === 1 ? '' : 's') +
+          ' en ' +
+          data.textCount +
+          ' nodo' +
+          (data.textCount === 1 ? '' : 's') +
+          ' de texto.';
+        resultSummary.className = '';
+
+        for (const family of data.fonts || []) {
+          const li = document.createElement('li');
+          li.textContent = family;
+          fontsList.appendChild(li);
+        }
       }
 
       // Mensajes desde el código del plugin
-      window.onmessage = (event) => {
+      window.onmessage = event => {
         const message = event.data.pluginMessage;
         if (!message || typeof message !== 'object') return;
 
-        if (message.type === 'font-styles') {
-          renderTable(message.styles || []);
+        if (message.type === 'init') {
+          populatePages(message.pages || []);
+        }
+
+        if (message.type === 'scan-result') {
+          renderResult(message);
         }
       };
 
-      // Botón de refrescar: pedir un nuevo escaneo
-      document.getElementById('refresh').onclick = () => {
-        parent.postMessage({ pluginMessage: { type: 'refresh' } }, '*');
+      // Escanear la página seleccionada
+      scanButton.onclick = () => {
+        const pageId = pageSelect.value;
+        if (!pageId) {
+          resultSummary.textContent = 'Por favor, selecciona una página primero.';
+          resultSummary.className = 'error';
+          fontsList.innerHTML = '';
+          return;
+        }
+
+        resultSummary.textContent = 'Escaneando página…';
+        resultSummary.className = '';
+        fontsList.innerHTML = '';
+
+        parent.postMessage(
+          { pluginMessage: { type: 'scan-page', pageId } },
+          '*'
+        );
       };
 
-      // Botón de cerrar
-      document.getElementById('close').onclick = () => {
-        parent.postMessage({ pluginMessage: { type: 'close' } }, '*');
+      // Cerrar plugin
+      closeButton.onclick = () => {
+        parent.postMessage(
+          { pluginMessage: { type: 'close' } },
+          '*'
+        );
       };
     </script>
   </body>
