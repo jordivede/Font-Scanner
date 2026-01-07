@@ -79,11 +79,32 @@
         font-weight: 600;
       }
 
-      ul {
-        margin: 4px 0 0;
-        padding-left: 18px;
-        max-height: 140px;
+      .table-container {
+        max-height: 200px;
         overflow: auto;
+        margin-top: 4px;
+      }
+
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 11px;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid #e5e7eb;
+        padding: 4px 6px;
+        text-align: left;
+        vertical-align: middle;
+      }
+
+      th {
+        background: #e5e7eb;
+        font-weight: 600;
+        position: sticky;
+        top: 0;
+        z-index: 1;
       }
 
       .empty {
@@ -97,8 +118,8 @@
     </style>
   </head>
   <body>
-    <h1>Font Families Counter</h1>
-    <p>Selecciona una página del archivo para ver cuántas tipografías diferentes utiliza.</p>
+    <h1>Font Styles Scanner</h1>
+    <p>Selecciona una página del archivo para ver todas las características tipográficas utilizadas.</p>
 
     <div>
       <label for="pageSelect">Página a escanear</label>
@@ -116,7 +137,7 @@
       <div id="resultSummary" class="empty">
         Aún no se ha escaneado ninguna página.
       </div>
-      <ul id="fontsList"></ul>
+      <div id="tableContainer" class="table-container"></div>
     </div>
 
     <script>
@@ -124,7 +145,7 @@
       const scanButton = document.getElementById('scanButton');
       const closeButton = document.getElementById('closeButton');
       const resultSummary = document.getElementById('resultSummary');
-      const fontsList = document.getElementById('fontsList');
+      const tableContainer = document.getElementById('tableContainer');
 
       function populatePages(pages) {
         pageSelect.innerHTML = '';
@@ -148,7 +169,7 @@
       }
 
       function renderResult(data) {
-        fontsList.innerHTML = '';
+        tableContainer.innerHTML = '';
 
         if (data.error) {
           resultSummary.textContent = data.error;
@@ -156,37 +177,58 @@
           return;
         }
 
-        if (!data.fontsCount || data.fontsCount === 0) {
+        const styles = data.styles || [];
+
+        if (!styles.length) {
           resultSummary.innerHTML =
             'La página <strong>' +
             (data.pageName || '') +
-            '</strong> no contiene textos con fuentes detectables.';
+            '</strong> no contiene textos con estilos tipográficos detectables.';
           resultSummary.className = '';
-          fontsList.innerHTML = '<li class="empty">Sin tipografías</li>';
+          tableContainer.innerHTML = '<div class="empty">Sin estilos</div>';
           return;
         }
 
         resultSummary.innerHTML =
           'La página <strong>' +
           (data.pageName || '') +
-          '</strong> utiliza <strong>' +
-          data.fontsCount +
-          '</strong> tipograf' +
-          (data.fontsCount === 1 ? 'ía' : 'ías') +
-          ' diferente' +
-          (data.fontsCount === 1 ? '' : 's') +
-          ' en ' +
+          '</strong> tiene <strong>' +
+          styles.length +
+          '</strong> estilos tipográficos únicos en ' +
           data.textCount +
           ' nodo' +
           (data.textCount === 1 ? '' : 's') +
           ' de texto.';
         resultSummary.className = '';
 
-        for (const family of data.fonts || []) {
-          const li = document.createElement('li');
-          li.textContent = family;
-          fontsList.appendChild(li);
+        let html = '<table><thead><tr>' +
+          '<th>Familia</th>' +
+          '<th>Estilo</th>' +
+          '<th>Tamaño</th>' +
+          '<th>Interlineado</th>' +
+          '<th>Tracking</th>' +
+          '<th>Mayúsculas</th>' +
+          '<th>Decoración</th>' +
+          '<th>Color</th>' +
+          '<th>Usos</th>' +
+          '</tr></thead><tbody>';
+
+        for (const s of styles) {
+          html += '<tr>' +
+            '<td>' + (s.fontFamily || '-') + '</td>' +
+            '<td>' + (s.fontStyle || '-') + '</td>' +
+            '<td>' + (s.fontSize || '-') + '</td>' +
+            '<td>' + (s.lineHeight || '-') + '</td>' +
+            '<td>' + (s.letterSpacing || '-') + '</td>' +
+            '<td>' + (s.textCase || '-') + '</td>' +
+            '<td>' + (s.textDecoration || '-') + '</td>' +
+            '<td>' + (s.fill || '-') + '</td>' +
+            '<td>' + (s.count || 0) + '</td>' +
+            '</tr>';
         }
+
+        html += '</tbody></table>';
+        tableContainer.innerHTML = html;
       }
 
       // Mensajes desde el código del plugin
@@ -209,13 +251,13 @@
         if (!pageId) {
           resultSummary.textContent = 'Por favor, selecciona una página primero.';
           resultSummary.className = 'error';
-          fontsList.innerHTML = '';
+          tableContainer.innerHTML = '';
           return;
         }
 
         resultSummary.textContent = 'Escaneando página…';
         resultSummary.className = '';
-        fontsList.innerHTML = '';
+        tableContainer.innerHTML = '';
 
         parent.postMessage(
           { pluginMessage: { type: 'scan-page', pageId } },
