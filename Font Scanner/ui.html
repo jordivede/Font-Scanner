@@ -2,118 +2,301 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>Font Scanner</title>
+    <title>FontScan</title>
     <style>
+      * {
+        box-sizing: border-box;
+      }
+
       body {
         margin: 0;
-        padding: 16px;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        background: #ffffff;
-        color: #111827;
-        font-size: 12px;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Roboto', sans-serif;
+        background: #f8f9fa;
+        color: #1a1a1a;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      .container {
+        max-width: 100%;
+        margin: 0;
+        padding: 24px;
       }
 
       h1 {
-        font-size: 16px;
+        font-size: 24px;
+        font-weight: 600;
         margin: 0 0 8px;
+        color: #1a1a1a;
+        letter-spacing: -0.02em;
       }
 
-      p {
-        margin: 0 0 12px;
+      .subtitle {
+        font-size: 14px;
         color: #6b7280;
+        margin: 0 0 24px;
+        font-weight: 400;
+      }
+
+      .card {
+        background: #111111;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e5e7eb;
+      }
+
+      .frame-info-card {
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        border: 1px solid #bae6fd;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+
+      .frame-info-card strong {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: #0369a1;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .frame-info-card span {
+        font-size: 14px;
+        color: #0c4a6e;
+        font-weight: 500;
+      }
+
+      .toggle-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px;
+        background: #ffffff;
+        border-radius: 12px;
+        margin-bottom: 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e5e7eb;
+      }
+
+      .toggle-wrapper .toggle-switch {
+        display: flex;
+        align-items: center;
+      }
+
+      .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 48px;
+        height: 28px;
+        flex-shrink: 0;
+      }
+
+      .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #d1d5db;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 28px;
+      }
+
+      .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 22px;
+        width: 22px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+
+      .toggle-switch input:checked + .toggle-slider {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      }
+
+      .toggle-switch input:checked + .toggle-slider:before {
+        transform: translateX(20px);
+      }
+
+      .toggle-label {
+        font-size: 14px;
+        font-weight: 500;
+        color: #374151;
+        flex: 1;
+      }
+
+      .form-group {
+        margin-bottom: 16px;
       }
 
       label {
         display: block;
-        margin-bottom: 4px;
+        font-size: 13px;
         font-weight: 500;
+        color: #374151;
+        margin-bottom: 8px;
       }
 
       select {
         width: 100%;
-        padding: 6px 8px;
-        border-radius: 6px;
-        border: 1px solid #d1d5db;
-        font-size: 12px;
-        margin-bottom: 8px;
+        padding: 12px 16px;
+        border-radius: 8px;
+        border: 1.5px solid #e5e7eb;
+        font-size: 14px;
+        background: #ffffff;
+        color: #1a1a1a;
+        transition: all 0.2s;
+        font-family: inherit;
       }
 
-      button {
-        border-radius: 6px;
+      select:hover {
+        border-color: #d1d5db;
+      }
+
+      select:focus {
+        outline: none;
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+      }
+
+      .btn {
+        border-radius: 8px;
         border: none;
-        padding: 6px 10px;
-        font-size: 12px;
+        padding: 12px 24px;
+        font-size: 14px;
+        font-weight: 600;
         cursor: pointer;
+        transition: all 0.2s;
+        font-family: inherit;
         display: inline-flex;
         align-items: center;
-        gap: 4px;
+        justify-content: center;
+        gap: 8px;
       }
 
       .btn-primary {
-        background: #111827;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
         color: #ffffff;
+        box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+      }
+
+      .btn-primary:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+      }
+
+      .btn-primary:active:not(:disabled) {
+        transform: translateY(0);
       }
 
       .btn-primary:disabled {
-        background: #9ca3af;
-        color: #ffffff;
+        background: #d1d5db;
+        color: #9ca3af;
         cursor: not-allowed;
-        opacity: 0.6;
+        box-shadow: none;
+        transform: none;
       }
 
       .btn-secondary {
-        background: #e5e7eb;
-        color: #111827;
+        background: #ffffff;
+        color: #374151;
+        border: 1.5px solid #e5e7eb;
+      }
+
+      .btn-secondary:hover {
+        background: #f9fafb;
+        border-color: #d1d5db;
       }
 
       .toolbar {
         display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 8px;
-        margin-bottom: 12px;
+        gap: 12px;
+        margin-bottom: 16px;
       }
 
-      .result {
-        padding: 8px;
-        border-radius: 6px;
-        background: #f9fafb;
+      .toolbar .btn {
+        flex: 1;
+      }
+
+      .result-card {
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         border: 1px solid #e5e7eb;
-        margin-bottom: 8px;
       }
 
-      .result strong {
+      .result-summary {
+        padding: 16px;
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        font-size: 14px;
+        line-height: 1.6;
+        color: #166534;
+      }
+
+      .result-summary strong {
         font-weight: 600;
+        color: #15803d;
       }
 
       .table-container {
-        max-height: calc(100vh - 300px);
+        max-height: calc(100vh - 400px);
         overflow: auto;
-        margin-top: 8px;
-        width: 100%;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+        background: #ffffff;
       }
 
       table {
         border-collapse: collapse;
         width: 100%;
-        font-size: 11px;
-        table-layout: auto;
+        font-size: 12px;
       }
 
       th,
       td {
-        border-bottom: 1px solid #e5e7eb;
-        padding: 6px 8px;
+        border-bottom: 1px solid #f3f4f6;
+        padding: 12px 16px;
         text-align: left;
         vertical-align: middle;
       }
 
       th {
-        background: #f3f4f6;
+        background: #f9fafb;
         font-weight: 600;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #6b7280;
         position: sticky;
         top: 0;
         z-index: 1;
+      }
+
+      tbody tr {
+        transition: background 0.15s;
       }
 
       tbody tr:hover {
@@ -121,74 +304,173 @@
       }
 
       .color-swatch {
-        width: 14px;
-        height: 14px;
-        border-radius: 3px;
-        border: 1px solid #d1d5db;
-        margin-right: 6px;
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+        border: 1.5px solid #e5e7eb;
         display: inline-block;
         vertical-align: middle;
+        margin-right: 8px;
       }
 
       input[type="radio"] {
         cursor: pointer;
-        width: 16px;
-        height: 16px;
+        width: 18px;
+        height: 18px;
+        accent-color: #10b981;
       }
 
       .radio-cell {
-        width: 30px;
+        width: 50px;
         text-align: center;
       }
 
       .empty {
         color: #9ca3af;
         font-style: italic;
+        text-align: center;
+        padding: 24px;
       }
 
       .error {
-        color: #b91c1c;
+        color: #dc2626;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        padding: 16px;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        font-size: 14px;
+      }
+
+      .text-style-badge {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        background: #dbeafe;
+        color: #1e40af;
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1;
+        word-wrap: break-word;
+      }
+
+      .color-token-badge {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        background: #fef3c7;
+        color: #92400e;
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1;
+        word-wrap: break-word;
+        cursor: help;
+        position: relative;
+      }
+
+      .color-token-badge:hover::after {
+        content: 'Design token';
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        margin-bottom: 8px;
+        padding: 6px 12px;
+        background: #1a1a1a;
+        color: #ffffff;
+        font-size: 11px;
+        font-weight: 500;
+        border-radius: 6px;
+        white-space: nowrap;
+        z-index: 1000;
+        pointer-events: none;
+      }
+
+      .color-token-badge:hover::before {
+        content: '';
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        margin-bottom: -1px;
+        border: 5px solid transparent;
+        border-top-color: #1a1a1a;
+        z-index: 1000;
+        pointer-events: none;
+      }
+
+      .color-style-badge {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        background: #d1fae5;
+        color: #065f46;
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1;
+        word-wrap: break-word;
+      }
+
+      .hidden {
+        display: none;
       }
     </style>
   </head>
   <body>
-    <h1>Font Scanner</h1>
-    <p>Selecciona una página del archivo para ver todas las características tipográficas utilizadas.</p>
+    <div class="container">
+      <h1>Font Scanner</h1>
+      <p class="subtitle">Escanea un frame o una página para ver todas las características tipográficas utilizadas.</p>
 
-    <div id="frameSelectionInfo" style="padding: 8px; margin-bottom: 8px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; font-size: 11px;">
-      <strong>Frame seleccionado:</strong> <span id="selectedFrameName">Ninguno</span>
-      <button class="btn-primary" id="scanFrameButton" style="margin-top: 4px; width: 100%;" disabled>Escanear frame seleccionado</button>
-    </div>
-
-    <div>
-      <label for="pageSelect">Página a escanear</label>
-      <select id="pageSelect">
-        <option value="" disabled selected>Cargando páginas…</option>
-      </select>
-    </div>
-
-    <div class="toolbar">
-      <button class="btn-primary" id="scanButton">Escanear página</button>
-      <button class="btn-secondary" id="closeButton">Cerrar</button>
-    </div>
-
-    <div id="actionToolbar" class="toolbar" style="display: none; margin-top: 8px;">
-      <button class="btn-primary" id="exportTableButton">Exportar tabla</button>
-      <button class="btn-primary" id="selectStylesButton">Seleccionar estilos en Figma</button>
-    </div>
-
-    <div id="result" class="result">
-      <div id="resultSummary" class="empty">
-        Aún no se ha escaneado ninguna página.
+      <div id="frameSelectionInfo" class="frame-info-card hidden">
+        <strong>Frame seleccionado</strong>
+        <span id="selectedFrameName">Ninguno</span>
       </div>
-      <div id="tableContainer" class="table-container"></div>
+
+      <div class="toggle-wrapper">
+        <label class="toggle-switch">
+          <input type="checkbox" id="scanPageToggle">
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="toggle-label" id="toggleLabel">Escanear toda la página</span>
+      </div>
+
+      <div id="pageSelectContainer" class="form-group hidden">
+        <label for="pageSelect">Página a escanear</label>
+        <select id="pageSelect">
+          <option value="" disabled selected>Cargando páginas…</option>
+        </select>
+      </div>
+
+      <div class="toolbar">
+        <button class="btn btn-primary" id="scanButton" disabled>Escanear frame</button>
+      </div>
+
+      <div id="actionToolbar" class="toolbar hidden">
+        <button class="btn btn-primary" id="exportTableButton">Exportar tabla</button>
+        <button class="btn btn-primary" id="selectStylesButton">Seleccionar en Figma</button>
+      </div>
+
+      <div id="result" class="result-card hidden">
+        <div id="resultSummary" class="result-summary"></div>
+        <div id="tableContainer" class="table-container"></div>
+      </div>
     </div>
 
     <script>
       const pageSelect = document.getElementById('pageSelect');
+      const pageSelectContainer = document.getElementById('pageSelectContainer');
       const scanButton = document.getElementById('scanButton');
-      const scanFrameButton = document.getElementById('scanFrameButton');
-      const closeButton = document.getElementById('closeButton');
+      const scanPageToggle = document.getElementById('scanPageToggle');
+      const toggleLabel = document.getElementById('toggleLabel');
       const resultSummary = document.getElementById('resultSummary');
       const tableContainer = document.getElementById('tableContainer');
       const actionToolbar = document.getElementById('actionToolbar');
@@ -196,6 +478,7 @@
       const selectStylesButton = document.getElementById('selectStylesButton');
       const frameSelectionInfo = document.getElementById('frameSelectionInfo');
       const selectedFrameName = document.getElementById('selectedFrameName');
+      const resultCard = document.getElementById('result');
 
       let currentStyles = [];
       let currentSelectedFrame = null;
@@ -204,13 +487,37 @@
         if (frame) {
           currentSelectedFrame = frame;
           selectedFrameName.textContent = frame.name;
-          scanFrameButton.disabled = false;
+          frameSelectionInfo.classList.remove('hidden');
         } else {
           currentSelectedFrame = null;
           selectedFrameName.textContent = 'Ninguno';
-          scanFrameButton.disabled = true;
+          frameSelectionInfo.classList.add('hidden');
+        }
+        updateScanButton();
+      }
+
+      function updateScanButton() {
+        if (scanPageToggle.checked) {
+          scanButton.disabled = !pageSelect.value;
+          scanButton.textContent = 'Escanear página';
+        } else {
+          scanButton.disabled = !currentSelectedFrame;
+          scanButton.textContent = 'Escanear frame';
         }
       }
+
+      scanPageToggle.onchange = () => {
+        if (scanPageToggle.checked) {
+          toggleLabel.textContent = 'Escanear toda la página';
+          pageSelectContainer.classList.remove('hidden');
+        } else {
+          toggleLabel.textContent = 'Escanear toda la pagina';
+          pageSelectContainer.classList.add('hidden');
+        }
+        updateScanButton();
+      };
+
+      pageSelect.onchange = updateScanButton;
 
       function populatePages(pages) {
         pageSelect.innerHTML = '';
@@ -222,6 +529,7 @@
           option.selected = true;
           option.textContent = 'No se han encontrado páginas';
           pageSelect.appendChild(option);
+          updateScanButton();
           return;
         }
 
@@ -231,6 +539,7 @@
           option.textContent = page.name;
           pageSelect.appendChild(option);
         }
+        updateScanButton();
       }
 
       function renderResult(data) {
@@ -243,9 +552,10 @@
             'La ' + scanType + ' <strong>' +
             (data.pageName || '') +
             '</strong> no contiene textos con estilos tipográficos detectables.';
-          resultSummary.className = '';
+          resultSummary.className = 'result-summary';
           tableContainer.innerHTML = '<div class="empty">Sin estilos tipográficos</div>';
-          actionToolbar.style.display = 'none';
+          actionToolbar.classList.add('hidden');
+          resultCard.classList.remove('hidden');
           return;
         }
 
@@ -266,16 +576,15 @@
           ' nodo' +
           (data.textCount === 1 ? '' : 's') +
           ' de texto.';
-        resultSummary.className = '';
+        resultSummary.className = 'result-summary';
 
         let html = '<table><thead><tr>' +
-          '<th class="radio-cell">Seleccionar</th>' +
+          '<th class="radio-cell">Sel</th>' +
           '<th>Text Style</th>' +
           '<th>Familia</th>' +
           '<th>Estilo</th>' +
           '<th>Tamaño</th>' +
           '<th>Interlineado</th>' +
-          '<th class="radio-cell">Color Swatch</th>' +
           '<th>Color</th>' +
           '<th>Usos</th>' +
           '</tr></thead><tbody>';
@@ -289,29 +598,34 @@
           
           let colorText = s.fill || '-';
           if (s.colorStyleName) {
-            colorText = '<strong>' + s.colorStyleName + '</strong> ' + (s.fill || '');
+            colorText = (s.fill || '-') + ' <span class="color-style-badge">' + s.colorStyleName + '</span>';
           } else if (s.colorTokenName) {
-            colorText = '<strong>' + s.colorTokenName + '</strong> ' + (s.fill || '');
+            colorText = (s.fill || '-') + ' <span class="color-token-badge">' + s.colorTokenName + '</span>';
           }
+          
+          const textStyleCell = s.textStyleName && s.textStyleName !== '-'
+            ? '<span class="text-style-badge">' + s.textStyleName + '</span>'
+            : '-';
+          
+          const colorCell = '<span class="color-swatch" style="' + swatchStyle + '"></span> ' + colorText;
           
           html += '<tr>' +
             '<td class="radio-cell"><input type="radio" name="styleSelection" class="style-radio" data-index="' + i + '" value="' + i + '"></td>' +
-            '<td>' + (s.textStyleName || '-') + '</td>' +
+            '<td>' + textStyleCell + '</td>' +
             '<td>' + (s.fontFamily || '-') + '</td>' +
             '<td>' + (s.fontStyle || '-') + '</td>' +
             '<td>' + (s.fontSize || '-') + '</td>' +
             '<td>' + (s.lineHeight || '-') + '</td>' +
-            '<td class="radio-cell"><span class="color-swatch" style="' + swatchStyle + '"></span></td>' +
-            '<td>' + colorText + '</td>' +
+            '<td>' + colorCell + '</td>' +
             '<td>' + (s.count || 0) + '</td>' +
             '</tr>';
         }
 
         html += '</tbody></table>';
         tableContainer.innerHTML = html;
+        resultCard.classList.remove('hidden');
       }
 
-      // Mensajes desde el código del plugin
       window.onmessage = event => {
         const message = event.data.pluginMessage;
         if (!message || typeof message !== 'object') return;
@@ -329,60 +643,65 @@
           currentStyles = message.styles || [];
           renderResult(message);
           if (currentStyles.length > 0) {
-            actionToolbar.style.display = 'flex';
+            actionToolbar.classList.remove('hidden');
           }
         }
 
         if (message.type === 'selection-complete') {
           resultSummary.textContent = message.message;
-          resultSummary.className = '';
+          resultSummary.className = 'result-summary';
         }
 
         if (message.type === 'error') {
           resultSummary.textContent = message.message;
           resultSummary.className = 'error';
+          resultCard.classList.remove('hidden');
         }
       };
 
-      // Escanear el frame seleccionado
-      scanFrameButton.onclick = () => {
-        if (!currentSelectedFrame || scanFrameButton.disabled) {
-          return;
-        }
-
-        resultSummary.textContent = 'Escaneando frame…';
-        resultSummary.className = '';
-        tableContainer.innerHTML = '';
-        actionToolbar.style.display = 'none';
-
-        parent.postMessage(
-          { pluginMessage: { type: 'scan-frame', frameId: currentSelectedFrame.id } },
-          '*'
-        );
-      };
-
-      // Escanear la página seleccionada
       scanButton.onclick = () => {
-        const pageId = pageSelect.value;
-        if (!pageId) {
-          resultSummary.textContent = 'Por favor, selecciona una página primero.';
-          resultSummary.className = 'error';
+        if (scanPageToggle.checked) {
+          const pageId = pageSelect.value;
+          if (!pageId) {
+            resultSummary.textContent = 'Por favor, selecciona una página primero.';
+            resultSummary.className = 'error';
+            tableContainer.innerHTML = '';
+            resultCard.classList.remove('hidden');
+            return;
+          }
+
+          resultSummary.textContent = 'Escaneando página…';
+          resultSummary.className = 'result-summary';
           tableContainer.innerHTML = '';
-          return;
+          actionToolbar.classList.add('hidden');
+          resultCard.classList.remove('hidden');
+
+          parent.postMessage(
+            { pluginMessage: { type: 'scan-page', pageId } },
+            '*'
+          );
+        } else {
+          if (!currentSelectedFrame) {
+            resultSummary.textContent = 'Por favor, selecciona un frame primero.';
+            resultSummary.className = 'error';
+            tableContainer.innerHTML = '';
+            resultCard.classList.remove('hidden');
+            return;
+          }
+
+          resultSummary.textContent = 'Escaneando frame…';
+          resultSummary.className = 'result-summary';
+          tableContainer.innerHTML = '';
+          actionToolbar.classList.add('hidden');
+          resultCard.classList.remove('hidden');
+
+          parent.postMessage(
+            { pluginMessage: { type: 'scan-frame', frameId: currentSelectedFrame.id } },
+            '*'
+          );
         }
-
-        resultSummary.textContent = 'Escaneando página…';
-        resultSummary.className = '';
-        tableContainer.innerHTML = '';
-        actionToolbar.style.display = 'none';
-
-        parent.postMessage(
-          { pluginMessage: { type: 'scan-page', pageId } },
-          '*'
-        );
       };
 
-      // Exportar tabla
       exportTableButton.onclick = () => {
         if (currentStyles.length === 0) {
           resultSummary.textContent = 'No hay datos para exportar.';
@@ -390,15 +709,14 @@
           return;
         }
 
-        // Crear CSV
-        let csv = 'Text Style,Familia,Estilo,Tamaño,Interlineado,Color Swatch,Color,Usos\n';
+        let csv = 'Text Style,Familia,Estilo,Tamaño,Interlineado,Color,Usos\n';
         
         for (var i = 0; i < currentStyles.length; i++) {
           const s = currentStyles[i];
           const colorText = s.colorStyleName 
-            ? s.colorStyleName + ' ' + (s.fill || '')
+            ? (s.fill || '') + ' ' + s.colorStyleName
             : s.colorTokenName 
-            ? s.colorTokenName + ' ' + (s.fill || '')
+            ? (s.fill || '') + ' ' + s.colorTokenName
             : (s.fill || '-');
           
           const row = [
@@ -407,15 +725,13 @@
             s.fontStyle || '-',
             s.fontSize || '-',
             s.lineHeight || '-',
-            s.fill || '-',
-            colorText.replace(/"/g, '""'), // Escapar comillas dobles
+            colorText.replace(/"/g, '""'),
             s.count || 0
           ];
           
           csv += '"' + row.join('","') + '"\n';
         }
 
-        // Crear y descargar CSV
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
@@ -426,41 +742,24 @@
         document.body.removeChild(link);
         
         resultSummary.textContent = 'Tabla exportada correctamente.';
-        resultSummary.className = '';
+        resultSummary.className = 'result-summary';
       };
 
-      // Seleccionar estilos en Figma
       selectStylesButton.onclick = () => {
-        const selectedRadio = tableContainer.querySelector('.style-radio:checked');
-        if (!selectedRadio) {
-          resultSummary.textContent = 'Por favor, selecciona un estilo.';
+        if (currentStyles.length === 0) {
+          resultSummary.textContent = 'No hay estilos para seleccionar.';
           resultSummary.className = 'error';
           return;
         }
 
-        const index = parseInt(selectedRadio.getAttribute('data-index'), 10);
-        const selectedStyles = [];
-        if (currentStyles[index]) {
-          selectedStyles.push(currentStyles[index]);
-        }
-
         resultSummary.textContent = 'Seleccionando nodos…';
-        resultSummary.className = '';
+        resultSummary.className = 'result-summary';
 
         parent.postMessage(
-          { pluginMessage: { type: 'select-styles', selectedStyles: selectedStyles } },
+          { pluginMessage: { type: 'select-styles', selectedStyles: currentStyles } },
           '*'
         );
       };
-
-      // Cerrar plugin
-      closeButton.onclick = () => {
-        parent.postMessage(
-          { pluginMessage: { type: 'close' } },
-          '*'
-        );
-      };
-
     </script>
   </body>
 </html>

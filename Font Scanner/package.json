@@ -11,6 +11,10 @@
   },
   "author": "",
   "license": "",
+  "dependencies": {
+    "@create-figma-plugin/ui": "^2.0.0",
+    "preact": "^10.0.0"
+  },
   "devDependencies": {
     "@figma/eslint-plugin-figma-plugins": "*",
     "@figma/plugin-typings": "*",
