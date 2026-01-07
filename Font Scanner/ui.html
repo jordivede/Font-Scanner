@@ -1,17 +1,205 @@
-<h2>Shape Creator</h2>
-<p>Count: <input id="count" type="number" value="5"></p>
-<button id="create">Create</button>
-<button id="cancel">Cancel</button>
-<script>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Font Scanner</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 16px;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: #ffffff;
+        color: #111827;
+      }
 
-document.getElementById('create').onclick = () => {
-  const textbox = document.getElementById('count');
-  const count = parseInt(textbox.value, 10);
-  parent.postMessage({ pluginMessage: { type: 'create-shapes', count } }, '*')
-}
+      h1 {
+        font-size: 16px;
+        margin: 0 0 8px;
+      }
 
-document.getElementById('cancel').onclick = () => {
-  parent.postMessage({ pluginMessage: { type: 'cancel' } }, '*')
-}
+      p {
+        margin: 0 0 12px;
+        font-size: 12px;
+        color: #6b7280;
+      }
 
-</script>
+      .toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+
+      button {
+        border-radius: 6px;
+        border: none;
+        padding: 6px 10px;
+        font-size: 11px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .btn-primary {
+        background: #111827;
+        color: #ffffff;
+      }
+
+      .btn-secondary {
+        background: #e5e7eb;
+        color: #111827;
+      }
+
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 11px;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid #e5e7eb;
+        padding: 6px 8px;
+        text-align: left;
+        vertical-align: middle;
+      }
+
+      th {
+        background: #f9fafb;
+        font-weight: 600;
+      }
+
+      tbody tr:nth-child(even) {
+        background: #f9fafb;
+      }
+
+      .sample-text {
+        font-size: 12px;
+      }
+
+      .badge {
+        padding: 2px 6px;
+        border-radius: 999px;
+        background: #e5e7eb;
+        font-size: 10px;
+      }
+
+      .empty-state {
+        font-size: 12px;
+        color: #6b7280;
+        text-align: center;
+        padding: 24px 8px 8px;
+      }
+
+      .color-swatch {
+        width: 14px;
+        height: 14px;
+        border-radius: 4px;
+        border: 1px solid #d1d5db;
+        margin-right: 6px;
+        display: inline-block;
+        vertical-align: middle;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Font Scanner</h1>
+    <p>Escanea la página actual y muestra todos los estilos tipográficos utilizados.</p>
+
+    <div class="toolbar">
+      <span id="summary" class="badge">0 estilos</span>
+      <div>
+        <button class="btn-secondary" id="refresh">Reescanear</button>
+        <button class="btn-primary" id="close">Cerrar</button>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="empty-state">
+        Escaneando tipografías…
+      </div>
+    </div>
+
+    <script>
+      const summaryEl = document.getElementById('summary');
+      const contentEl = document.getElementById('content');
+
+      function renderTable(styles) {
+        if (!styles || styles.length === 0) {
+          summaryEl.textContent = '0 estilos';
+          contentEl.innerHTML =
+            '<div class="empty-state">No se han encontrado textos en la página actual.</div>';
+          return;
+        }
+
+        summaryEl.textContent =
+          styles.length === 1 ? '1 estilo' : styles.length + ' estilos';
+
+        let html = '<table><thead><tr>' +
+          '<th>Fuente</th>' +
+          '<th>Tamaño</th>' +
+          '<th>Interlineado</th>' +
+          '<th>Tracking</th>' +
+          '<th>Mayúsculas / Deco</th>' +
+          '<th>Color</th>' +
+          '<th>Usos</th>' +
+          '<th>Muestra</th>' +
+          '</tr></thead><tbody>';
+
+        for (const style of styles) {
+          const color = style.fill || 'n/a';
+          const swatchStyle = color.startsWith('rgb')
+            ? 'background:' + color + ';'
+            : '';
+
+          html += '<tr>' +
+            '<td>' + (style.fontFamily || '-') + ' <span class="badge">' +
+            (style.fontStyle || '-') + '</span></td>' +
+            '<td>' + (style.fontSize || '-') + '</td>' +
+            '<td>' + (style.lineHeight || '-') + '</td>' +
+            '<td>' + (style.letterSpacing || '-') + '</td>' +
+            '<td>' +
+            (style.textCase || '-') +
+            ' / ' +
+            (style.textDecoration || '-') +
+            '</td>' +
+            '<td><span class="color-swatch" style="' + swatchStyle + '"></span>' +
+            color +
+            '</td>' +
+            '<td>' + (style.count || 0) + '</td>' +
+            '<td><span class="sample-text" ' +
+            'style="' +
+            (color.startsWith('rgb') ? 'color:' + color + ';' : '') +
+            '">' +
+            'AaBbCc' +
+            '</span></td>' +
+            '</tr>';
+        }
+
+        html += '</tbody></table>';
+        contentEl.innerHTML = html;
+      }
+
+      // Mensajes desde el código del plugin
+      window.onmessage = (event) => {
+        const message = event.data.pluginMessage;
+        if (!message || typeof message !== 'object') return;
+
+        if (message.type === 'font-styles') {
+          renderTable(message.styles || []);
+        }
+      };
+
+      // Botón de refrescar: pedir un nuevo escaneo
+      document.getElementById('refresh').onclick = () => {
+        parent.postMessage({ pluginMessage: { type: 'refresh' } }, '*');
+      };
+
+      // Botón de cerrar
+      document.getElementById('close').onclick = () => {
+        parent.postMessage({ pluginMessage: { type: 'close' } }, '*');
+      };
+    </script>
+  </body>
+</html>
