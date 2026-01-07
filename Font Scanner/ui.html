@@ -80,9 +80,9 @@
       }
 
       .table-container {
-        max-height: 200px;
+        max-height: 300px;
         overflow: auto;
-        margin-top: 4px;
+        margin-top: 8px;
       }
 
       table {
@@ -94,17 +94,31 @@
       th,
       td {
         border-bottom: 1px solid #e5e7eb;
-        padding: 4px 6px;
+        padding: 6px 8px;
         text-align: left;
         vertical-align: middle;
       }
 
       th {
-        background: #e5e7eb;
+        background: #f3f4f6;
         font-weight: 600;
         position: sticky;
         top: 0;
         z-index: 1;
+      }
+
+      tbody tr:hover {
+        background: #f9fafb;
+      }
+
+      .color-swatch {
+        width: 14px;
+        height: 14px;
+        border-radius: 3px;
+        border: 1px solid #d1d5db;
+        margin-right: 6px;
+        display: inline-block;
+        vertical-align: middle;
       }
 
       .empty {
@@ -118,7 +132,7 @@
     </style>
   </head>
   <body>
-    <h1>Font Styles Scanner</h1>
+    <h1>Font Scanner</h1>
     <p>Selecciona una página del archivo para ver todas las características tipográficas utilizadas.</p>
 
     <div>
@@ -185,7 +199,7 @@
             (data.pageName || '') +
             '</strong> no contiene textos con estilos tipográficos detectables.';
           resultSummary.className = '';
-          tableContainer.innerHTML = '<div class="empty">Sin estilos</div>';
+          tableContainer.innerHTML = '<div class="empty">Sin estilos tipográficos</div>';
           return;
         }
 
@@ -194,7 +208,13 @@
           (data.pageName || '') +
           '</strong> tiene <strong>' +
           styles.length +
-          '</strong> estilos tipográficos únicos en ' +
+          '</strong> estilo' +
+          (styles.length === 1 ? '' : 's') +
+          ' tipográfico' +
+          (styles.length === 1 ? '' : 's') +
+          ' único' +
+          (styles.length === 1 ? '' : 's') +
+          ' en ' +
           data.textCount +
           ' nodo' +
           (data.textCount === 1 ? '' : 's') +
@@ -207,22 +227,25 @@
           '<th>Tamaño</th>' +
           '<th>Interlineado</th>' +
           '<th>Tracking</th>' +
-          '<th>Mayúsculas</th>' +
-          '<th>Decoración</th>' +
           '<th>Color</th>' +
           '<th>Usos</th>' +
           '</tr></thead><tbody>';
 
         for (const s of styles) {
+          const color = s.fill || 'n/a';
+          const swatchStyle = color.startsWith('rgb')
+            ? 'background:' + color + ';'
+            : '';
+
           html += '<tr>' +
             '<td>' + (s.fontFamily || '-') + '</td>' +
             '<td>' + (s.fontStyle || '-') + '</td>' +
             '<td>' + (s.fontSize || '-') + '</td>' +
             '<td>' + (s.lineHeight || '-') + '</td>' +
             '<td>' + (s.letterSpacing || '-') + '</td>' +
-            '<td>' + (s.textCase || '-') + '</td>' +
-            '<td>' + (s.textDecoration || '-') + '</td>' +
-            '<td>' + (s.fill || '-') + '</td>' +
+            '<td><span class="color-swatch" style="' + swatchStyle + '"></span>' +
+            color +
+            '</td>' +
             '<td>' + (s.count || 0) + '</td>' +
             '</tr>';
         }
